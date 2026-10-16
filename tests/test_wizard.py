@@ -1,24 +1,19 @@
-"""Setup wizard: the pure helpers and (when PySide6 exists) the Qt window.
+"""Setup wizard — the pure helpers (no Qt required).
 
-The helper tests run on a bare interpreter; the window tests are skipped without
-PySide6, exactly like the rest of the suite.
+The window itself is exercised in ``test_wizard_gui.py`` so a host without Qt
+still runs everything here.
 """
 
 from __future__ import annotations
 
-import os
+import json
 import pathlib
 import re
 
 import pytest
 
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-from mamidlabs import wizard  # noqa: E402
-from mamidlabs.core import i18n  # noqa: E402
-
-
-# --- pure helpers ------------------------------------------------------------
+from mamidlabs import wizard
+from mamidlabs.core import i18n
 
 
 def test_build_install_args_local_profile():
@@ -91,7 +86,7 @@ def test_find_install_script_finds_the_repo_copy(monkeypatch):
     assert found.name == "install-mamidlabs.sh"
 
 
-def test_find_eula_exists_in_the_repo(monkeypatch):
+def test_find_eula_exists_in_the_repo():
     assert wizard.find_eula() is not None
 
 
@@ -115,196 +110,8 @@ def test_every_wizard_key_used_in_code_is_in_the_catalogs():
 
 
 def _catalog(code: str) -> dict[str, str]:
-    import json
-
-    path = i18n.LOCALES_DIR / f"{code}.json"
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads((i18n.LOCALES_DIR / f"{code}.json").read_text(encoding="utf-8"))
 
 
 def _known(key: str, catalog: dict[str, str]) -> bool:
     return key in catalog or any(existing.startswith(key + ".") for existing in catalog)
-
-
-# --- Qt window (skipped without PySide6) -------------------------------------
-
-pytest.importorskip("PySide6", reason="PySide6 is only needed for the window tests")
-
-from PySide6.QtWidgets import QApplication  # noqa: E402
-
-from mamidlabs.core.paths import Paths  # noqa: E402
-from mamidlabs.core.settings import Settings  # noqa: E402
-from mamidlabs.wizard.setup import (ID_API, ID_COMPONENTS, ID_INSTALL, ID_LANG,  # noqa: E402
-                                    ID_OWN, ID_PROFILE, ID_READY, ID_REPORT,
-                                    SetupWizard)
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    app = QApplication.instance() or QApplication([])
-    yield app
-
-
-@pytest.fixture(autouse=True)
-def _turkish():
-    i18n.set_language("tr")
-    yield
-    i18n.set_language("tr")
-
-
-def _wizard(tmp_path) -> SetupWizard:
-    window = SetupWizard(root=tmp_path / "root", language="tr")
-    window.restart()  # QWizard only tracks currentId() after it is started
-    return window
-
-
-def test_wizard_builds_all_pages(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        assert window.windowTitle() == i18n.t("wizard.title")
-        assert len(window.pages) == 13
-        assert window.pages[ID_LANG].title() == i18n.t("wizard.lang.title")
-    finally:
-        window.close()
-
-
-def test_language_switch_retranslates_live(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        turkish = window.pages[ID_LANG].title()
-        window._set_language("en")
-        assert window.windowTitle() == "MamidLabs setup wizard"
-        assert window.pages[ID_LANG].title() == "Language"
-        window._set_language("tr")
-        assert window.pages[ID_LANG].title() == turkish
-    finally:
-        window.close()
-
-
-def test_language_switch_is_persisted(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        window._set_language("en")
-        saved = Settings(Paths(window.root()))
-        saved.load()
-        assert saved.language == "en"
-    finally:
-        window.close()
-
-
-def test_profile_page_prefills_the_recommendation(qapp, tmp_path):
-    from mamidlabs.core import hwinfo
-
-    window = _wizard(tmp_path)
-    try:
-        window.report = hwinfo.Report(gpus=[hwinfo.Gpu("RTX 5060 Ti", 16311)])
-        window.pages[ID_PROFILE].initializePage()
-        assert window.pages[ID_PROFILE].choice() == "flash"
-        assert window.install_profile() == "flash"
-
-        window.report = hwinfo.Report()  # no NVIDIA → "later" + API hint
-        window.pages[ID_PROFILE].initializePage()
-        assert window.pages[ID_PROFILE].choice() == "later"
-        assert window.install_profile() is None
-    finally:
-        window.close()
-
-
-def test_report_page_formats_the_measurement(qapp, tmp_path):
-    from mamidlabs.core import hwinfo
-
-    window = _wizard(tmp_path)
-    try:
-        window.report = hwinfo.Report(gpus=[hwinfo.Gpu("RTX 5060 Ti", 16311)],
-                                      ram_mib=64 * 1024, cpu="Ryzen 5 3600", cores=12,
-                                      distro="Ubuntu 24.04", free_gib=200.0)
-        text = window.format_report(window.report)
-        assert "RTX 5060 Ti" in text
-        assert "16311 MiB" in text
-        assert i18n.t("wizard.report.recommend") in text
-    finally:
-        window.close()
-
-
-def test_page_flow_depends_on_the_profile_choice(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        window.setCurrentId(ID_PROFILE)
-        for choice, expected in (("own", ID_OWN), ("later", ID_API),
-                                 ("lite", ID_COMPONENTS), ("flash", ID_COMPONENTS)):
-            window.pages[ID_PROFILE].buttons[choice].setChecked(True)
-            assert window.nextId() == expected, choice
-        # After the API page, "later" goes straight to the summary; a local
-        # profile still shows the components page.
-        window.setCurrentId(ID_API)
-        window.pages[ID_PROFILE].buttons["later"].setChecked(True)
-        assert window.nextId() == ID_READY
-        window.pages[ID_PROFILE].buttons["lite"].setChecked(True)
-        assert window.nextId() == ID_COMPONENTS
-    finally:
-        window.close()
-
-
-def test_install_page_reads_a_progress_file(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        logs = window.root() / "logs"
-        logs.mkdir(parents=True, exist_ok=True)
-        (logs / "kurulum-adim.txt").write_text("3\n7\npython\n", encoding="utf-8")
-        window.read_progress()
-        assert window.progress == (3, 7, "python")
-        # A malformed file must not crash the poll loop.
-        (logs / "kurulum-adim.txt").write_text("cevap\n", encoding="utf-8")
-        window.read_progress()
-        assert window.progress == (0, 0, "")
-    finally:
-        window.close()
-
-
-def test_summary_page_handles_a_missing_file(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        expected = i18n.t("wizard.summary.missing",
-                          path=window.root() / "logs" / "kurulum-ozeti.txt")
-        assert window.format_summary_file() == expected
-    finally:
-        window.close()
-
-
-def test_write_settings_records_the_choices(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        window.pages[ID_PROFILE].buttons["own"].setChecked(True)
-        window.pages[ID_OWN].edits["llm"].setText("/models/x.gguf")
-        window.pages[ID_API].open_box.setChecked(True)
-        window.write_settings()
-
-        saved = Settings(Paths(window.root()))
-        saved.load()
-        assert saved["language"] == "tr"
-        assert saved["localModels"] == ["/models/x.gguf"]
-        assert saved["firstRunApiSettings"] is True
-    finally:
-        window.close()
-
-
-def test_install_page_is_not_complete_until_finished(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        page = window.pages[ID_INSTALL]
-        assert page.isComplete() is False
-        page.finished = True
-        assert page.isComplete() is True
-    finally:
-        window.close()
-
-
-def test_own_page_rejects_a_missing_file(qapp, tmp_path):
-    window = _wizard(tmp_path)
-    try:
-        page = window.pages[ID_OWN]
-        assert page.isComplete()  # empty fields are fine
-        page.edits["llm"].setText(str(tmp_path / "yok.gguf"))
-        assert not page.isComplete()
-    finally:
-        window.close()
-
