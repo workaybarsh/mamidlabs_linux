@@ -10,6 +10,12 @@ Sürümün tek kaynağı `mamidlabs/__init__.py` içindeki `__version__` ve
 ## [1.0.0] — 2026-10-16
 
 ### Eklendi
+- **GitHub Actions yayın iş akışı (`.deb`).** `v*` etiketi itildiğinde `.deb`
+  paketi derlenir ve **sabit adla** (`mamidlabs.deb`) GitHub Release'e yüklenir;
+  böylece `releases/latest/download/mamidlabs.deb` her zaman en son sürümü
+  doğrudan indirir. Sürümün tek kaynağı `__version__` (etiketle eşleşmesi
+  doğrulanır) ve sürüm notu `CHANGELOG.md`'den okunur. Dal/PR koşuları yalnızca
+  artifact üretir.
 - **Kurulum sihirbazı (Qt6).** Uygulama menüsündeki “MamidLabs Kurulum” simgesi
   (ya da `scripts/mamidlabs-setup.sh`) donanımı ölçüp uygun profili öneren bir
   sihirbaz açar: dil (Türkçe/English) → karşılama → lisans → klasör → donanım

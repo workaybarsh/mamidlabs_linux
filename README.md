@@ -52,6 +52,17 @@ bağlamı varken sunulur.
 
 ## Kurulum
 
+### Hazır paket (.deb)
+
+En son sürümün `.deb` paketini doğrudan indirin:
+
+- **İndir:** [`mamidlabs.deb`](https://github.com/workaybarsh/mamidlabs_linux/releases/latest/download/mamidlabs.deb)
+
+```bash
+sudo apt install ./mamidlabs.deb
+mamidlabs-setup        # ya da uygulama menüsünden "MamidLabs Kurulum"
+```
+
 ### Kurulum sihirbazı (önerilen)
 
 Uygulama menüsündeki **MamidLabs Kurulum** simgesi (ya da `./scripts/mamidlabs-setup.sh`)

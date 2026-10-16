@@ -61,6 +61,7 @@ ve araç kümesi Windows sürümüyle birebir tutulur.
 | `tests/` | pytest (152 test) |
 | `docs/` | `kurulum.md`, `teknik-notlar.md` |
 | `.github/workflows/tests.yml` | CI (ubuntu-latest, Python 3.12) |
+| `.github/workflows/kurulum-paketi.yml` | Yayın: `v*` etiketinde `.deb` derler, sabit adla (`mamidlabs.deb`) GitHub Release'e yükler |
 | `AGENTS.md` | Bu rehber. Kurulum köküne kopyalanmaz. |
 
 ### İşçiler (`mamidlabs/workers/`)
@@ -233,7 +234,10 @@ modelin metni kullanılmaz, dürüst mesaj gösterilir; uydurma atıflar
 - **Güncelleme:** uygulamayı kapat → `git pull` → `install-mamidlabs.sh --stage layout`.
 - **Sürüm ve yayım:** sürümün tek kaynağı `mamidlabs/__init__.py:__version__` ve
   `pyproject.toml:version` (eşit olmalı). Yeni sürüm: ikisini artır, `CHANGELOG.md`'ye
-  bölüm ekle, `v<sürüm>` etiketini it.
+  bölüm ekle, `v<sürüm>` etiketini it. Etiket itilince
+  `.github/workflows/kurulum-paketi.yml` `.deb`'yi derler ve **sabit adla**
+  (`mamidlabs.deb`) GitHub Release'e yükler; `releases/latest/download/mamidlabs.deb`
+  böylece her zaman en son sürümü indirir.
 
 ## 11. Ayarlar ve kullanıcı verisi
 
@@ -356,5 +360,6 @@ Her özellik/değişiklik için bir satır ekle (en yeni üstte).
 
 | Tarih | Değişiklik | Dosyalar |
 |---|---|---|
+| 2026-10-16 | **Yayın iş akışı eklendi (`.deb`).** `v*` etiketi itilince `packaging/linux/build-deb.sh` ile `.deb` derlenir ve **sabit adla** (`mamidlabs.deb`) GitHub Release'e yüklenir; README'ye "Hazır paket (.deb)" bölümü ve `releases/latest/download/mamidlabs.deb` bağlantısı eklendi. Dal/PR koşuları yalnızca artifact üretir; etiket `__version__` ile eşleşmezse iş durur. | .github/workflows/kurulum-paketi.yml, README.md, CHANGELOG.md, AGENTS.md |
 | 2026-10-16 | **Kurulum sihirbazı + donanım ölçümü + `.deb` paketi eklendi.** Qt6 `QWizard` (13 sayfa: dil → karşılama → lisans → klasör → donanım raporu → profil → kendi modellerin → API → bileşenler → hazır → kurulum → özet → bitiş) kullanıcıya ilk adımda **Türkçe mi English mi** diye sorar; seçim canlı çevirir ve `settings/api.json:language`'a yazılır. `hwinfo` VRAM eşikleriyle (≥15000 MiB → PRO, ≥7000 MiB → LITE, NVIDIA yoksa → API) profil önerir. Sihirbaz `install-mamidlabs.sh`'i çalıştırır ve ilerlemeyi `logs/kurulum-adim.txt`'ten okur; betiğe `--language` ve ilerleme/özet yazımı eklendi. `packaging/linux/build-deb.sh` mimariden bağımsız `.deb` üretir (`mamidlabs-setup` + masaüstü girdileri). Sihirbaz saf yardımcılar (`wizard/__init__.py`) ile Qt penceresi (`wizard/setup.py`) olarak ayrıldı; `conftest.py` dil durumunu testler arasında sıfırlar. Testler: `test_hwinfo.py`, `test_wizard.py` (saf), `test_wizard_gui.py` (başsız Qt), `test_i18n.py`, `test_packaging_contract.py` (toplam 152). | `mamidlabs/core/hwinfo.py`, `mamidlabs/wizard/*`, `scripts/install-mamidlabs.sh`, `scripts/mamidlabs-setup.sh`, `packaging/linux/*`, `mamidlabs/locales/*`, `pyproject.toml`, `conftest.py`, `tests/*`, `README.md`, `CHANGELOG.md` |
 | 2026-10-16 | **Linux sürümü ilk kez yazıldı (1.0.0).** Windows sürümü (PowerShell + WinForms) Linux'ta çalışmadığı için uygulama tek dilde (Python 3.12 + PySide6/Qt6) baştan yazıldı; sabitler, davranışlar ve araç kümesi Windows sürümüyle birebir korundu. Çekirdek (`paths`, `settings`, `profiles`, `providers`, `manage`, `inference`, `tools`, `chart`, `runner`), Qt6 arayüzü, taşınan Python işçileri, bash kurulum/yönetim/kaldırma/smoke betikleri, `.desktop` + simge, dokümanlar ve 78 test eklendi. Windows'a özgü parçalar Linux karşılıklarıyla değiştirildi: DPAPI → OS anahtar zinciri / `0600`; gömülü PowerShell 7 → sistem Python; WinForms → Qt6; `System.Drawing` → matplotlib; `%ProgramFiles%\7-Zip` → PATH'teki `7z`/`7za`; PDF yazı tipleri → DejaVu. | tümü |
