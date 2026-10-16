@@ -52,10 +52,37 @@ bağlamı varken sunulur.
 
 ## Kurulum
 
+### Kurulum sihirbazı (önerilen)
+
+Uygulama menüsündeki **MamidLabs Kurulum** simgesi (ya da `./scripts/mamidlabs-setup.sh`)
+donanımı ölçüp uygun profili öneren bir **Qt6 sihirbazı** açar:
+
+> dil (Türkçe / English) → karşılama → lisans → kurulum klasörü → donanım raporu →
+> profil (LITE / PRO / şimdi indirme / kendi modelin–API) → (kendi modellerin) →
+> (API) → (bileşenler) → hazır → kurulum → özet → bitiş
+
+Sihirbaz dil seçimini `settings/api.json`'a yazar, kendi model yollarını ve
+bileşen seçimlerini kaydeder ve gerçek işi `scripts/install-mamidlabs.sh`'e
+bırakır; ilerlemeyi `logs/kurulum-adim.txt`'ten okur. Grafik masaüstü yoksa
+(`DISPLAY`/`WAYLAND_DISPLAY` yoksa) anlaşılır bir mesaj verip terminal betiğini
+önerir.
+
+`.deb` paketi de sihirbazı kurar:
+
+```bash
+packaging/linux/build-deb.sh                 # packaging/linux/Output/mamidlabs_<sürüm>_all.deb
+sudo apt install ./packaging/linux/Output/mamidlabs_*_all.deb
+mamidlabs-setup                              # ya da uygulama menüsünden "MamidLabs Kurulum"
+```
+
+Ayrıntı: [`packaging/linux/README.md`](packaging/linux/README.md).
+
+### Terminalden
+
 ```bash
 git clone https://github.com/workaybarsh/mamidlabs_linux.git
 cd mamidlabs_linux
-./scripts/install-mamidlabs.sh --profile flash
+./scripts/install-mamidlabs.sh --profile flash --language tr
 ```
 
 Kurulum aşamaları: `preflight → layout → llama → python → comfyui → models → verify`.
@@ -72,6 +99,7 @@ Faydalı seçenekler:
 |---|---|
 | `--root <yol>` | Kurulum kökü (varsayılan `~/.local/share/mamidlabs`) |
 | `--profile max\|flash\|lite` | Model indirme profili (varsayılan: indirmez) |
+| `--language tr\|en` | Arayüz dili; `settings/api.json`'a yazılır |
 | `--skip-media` | ComfyUI ve görsel/video bileşenlerini atla |
 | `--skip-audio` | Ses dökümü ortamını (`venv/asr`) atla |
 | `--skip-ocr` | OCR ortamını (`venv/ocr`) atla |
@@ -159,10 +187,12 @@ yüklenmeden önce kapatılır (boşta ne VRAM ne RAM tutar).
 
 ```bash
 python -m pip install pytest -r requirements/app.txt
-python -m pytest -q
+python -m pytest -q          # 152 test; PySide6 gerektirmez (Qt yalnızca sihirbaz testlerinde lazım)
 ```
 
-Uçtan uca doğrulama (kurulu kökte, gerçek modellerle):
+PySide6 kuruluysa sihirbazın penceresi de başsız (`QT_QPA_PLATFORM=offscreen`)
+test edilir; kurulu değilse o testler atlanır. Uçtan uca doğrulama (kurulu kökte,
+gerçek modellerle):
 
 ```bash
 ./scripts/smoke-test.sh --profile flash

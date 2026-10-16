@@ -38,6 +38,8 @@ ve araç kümesi Windows sürümüyle birebir tutulur.
 | `mamidlabs/ui/main_window.py` | Ana pencere, sohbet, profil/sağlayıcı seçicileri, çipler, `TurnWorker`/`ManageWorker` |
 | `mamidlabs/ui/settings_dialog.py` | API bağlantıları penceresi, anahtar doğrulama |
 | `mamidlabs/ui/theme.py` | Qt stil sayfası |
+| `mamidlabs/core/hwinfo.py` | Donanım ölçümü + profil önerisi (sihirbaz 5. adım) |
+| `mamidlabs/wizard/` | Kurulum sihirbazı: `__init__.py` (saf yardımcılar), `setup.py` (Qt6 `QWizard`, 13 sayfa), `__main__.py` (giriş + masaüstü denetimi) |
 | `mamidlabs/core/paths.py` | XDG kurulum kökü ve tüm yollar |
 | `mamidlabs/core/settings.py` | `api.json` deposu (atomik yazım, `0600`), `SecretStore`, `secret_backend` |
 | `mamidlabs/core/profiles.py` | Profil kataloğu, takma adlar, hedef yollar, eksik dosyalar |
@@ -52,9 +54,11 @@ ve araç kümesi Windows sürümüyle birebir tutulur.
 | `scripts/manage-mamidlabs.sh` | Model/ComfyUI yönetimi, doctor, profiles |
 | `scripts/uninstall-mamidlabs.sh` | Tam kaldırma (kök dışına dokunmaz) |
 | `scripts/smoke-test.sh` | Gerçek modellerle uçtan uca doğrulama |
+| `scripts/mamidlabs-setup.sh` | Kurulum sihirbazını başlatır (`python -m mamidlabs.wizard`) |
+| `packaging/linux/build-deb.sh` | `.deb` üretir (uygulama + sihirbaz); `packaging/linux/README.md` |
 | `packaging/mamidlabs.desktop`, `packaging/mamidlabs.svg` | Masaüstü başlatıcı ve simge |
 | `requirements/{app,imagegen,asr,ocr}.txt` | Python paketleri (sabit sürümler) |
-| `tests/` | pytest (78 test) |
+| `tests/` | pytest (152 test) |
 | `docs/` | `kurulum.md`, `teknik-notlar.md` |
 | `.github/workflows/tests.yml` | CI (ubuntu-latest, Python 3.12) |
 | `AGENTS.md` | Bu rehber. Kurulum köküne kopyalanmaz. |
@@ -213,9 +217,12 @@ modelin metni kullanılmaz, dürüst mesaj gösterilir; uydurma atıflar
 
 ## 10. Kurulum, güncelleme ve kaldırma
 
-- `install-mamidlabs.sh [--root] [--profile] [--stage a,b] [--skip-media]
-  [--skip-audio] [--skip-ocr] [--skip-models] [--no-desktop] [--no-cuda] [--force]`.
-  Aşamalar: `preflight`, `layout`, `llama`, `python`, `comfyui`, `models`, `verify`.
+- `install-mamidlabs.sh [--root] [--profile] [--language tr|en] [--stage a,b]
+  [--skip-media] [--skip-audio] [--skip-ocr] [--skip-models] [--no-desktop]
+  [--no-cuda] [--force]`. Aşamalar: `preflight`, `layout`, `llama`, `python`,
+  `comfyui`, `models`, `verify`. `--language` seçimi `settings/api.json`'a yazar;
+  aşama döngüsü ilerlemeyi `logs/kurulum-adim.txt` (satır 1/2/3: adım no, toplam,
+  ad), sonunda özeti `logs/kurulum-ozeti.txt` yazar (sihirbaz bunları okur).
 - `layout` program dosyalarını, başlatıcıyı, `.desktop` ve simgeyi kurar; ayrıca
   `mamidlabs-launch` başlatıcısını yazar.
 - Sabit sürümler: llama.cpp `b10998`, ComfyUI `b0f4b7b`, ComfyUI-GGUF `6ea2651`,
@@ -251,7 +258,7 @@ Sohbetler `chats/` altında saklanır. `logs/audit.jsonl`: araç çağrıları k
 
 ```bash
 python -m pip install pytest -r requirements/app.txt
-python -m pytest -q          # 78 test; PySide6 gerektirmez (GUI içe aktarılmaz)
+python -m pytest -q          # 152 test; PySide6 gerektirmez (Qt yalnızca sihirbaz testleri için)
 ./scripts/smoke-test.sh --profile flash
 ```
 
@@ -320,6 +327,12 @@ bağlamı ~140 MiB ölçüldü; bu yüzden sıcak ses işçisi dil modeli geri y
     `pyproject.toml:version`. İkisini birlikte artır.
 12. **`.desktop` başlatıcısı `@ROOT@` yer tutucusu içerir;** kurulum `sed` ile
     gerçek kökle değiştirir. Doğrudan kopyalamayın.
+13. **Sihirbaz Qt ve grafik masaüstü ister.** `python -m mamidlabs.wizard` PySide6
+    yoksa `wizard.error.no_pyside` ile **2**, `DISPLAY`/`WAYLAND_DISPLAY` yoksa
+    `wizard.error.no_display` ile **1** koduyla çıkar (`wizard/setup.py` bu yüzden
+    tembel içe aktarılır). Sihirbazın saf yardımcıları (`wizard/__init__.py`) Qt
+    olmadan içe aktarılır ve test edilir. Dil süreç-global olduğundan testler
+    `conftest.py`'deki autouse fikstürle Türkçe'ye sıfırlanır.
 
 ## 15. Değişiklik yaparken kontrol listesi
 
@@ -340,4 +353,5 @@ Her özellik/değişiklik için bir satır ekle (en yeni üstte).
 
 | Tarih | Değişiklik | Dosyalar |
 |---|---|---|
+| 2026-10-16 | **Kurulum sihirbazı + donanım ölçümü + `.deb` paketi eklendi.** Qt6 `QWizard` (13 sayfa: dil → karşılama → lisans → klasör → donanım raporu → profil → kendi modellerin → API → bileşenler → hazır → kurulum → özet → bitiş) kullanıcıya ilk adımda **Türkçe mi English mi** diye sorar; seçim canlı çevirir ve `settings/api.json:language`'a yazılır. `hwinfo` VRAM eşikleriyle (≥15000 MiB → PRO, ≥7000 MiB → LITE, NVIDIA yoksa → API) profil önerir. Sihirbaz `install-mamidlabs.sh`'i çalıştırır ve ilerlemeyi `logs/kurulum-adim.txt`'ten okur; betiğe `--language` ve ilerleme/özet yazımı eklendi. `packaging/linux/build-deb.sh` mimariden bağımsız `.deb` üretir (`mamidlabs-setup` + masaüstü girdileri). Sihirbaz saf yardımcılar (`wizard/__init__.py`) ile Qt penceresi (`wizard/setup.py`) olarak ayrıldı; `conftest.py` dil durumunu testler arasında sıfırlar. Testler: `test_hwinfo.py`, `test_wizard.py`, `test_i18n.py`, `test_packaging_contract.py` (toplam 152). | `mamidlabs/core/hwinfo.py`, `mamidlabs/wizard/*`, `scripts/install-mamidlabs.sh`, `scripts/mamidlabs-setup.sh`, `packaging/linux/*`, `mamidlabs/locales/*`, `pyproject.toml`, `conftest.py`, `tests/*`, `README.md`, `CHANGELOG.md` |
 | 2026-10-16 | **Linux sürümü ilk kez yazıldı (1.0.0).** Windows sürümü (PowerShell + WinForms) Linux'ta çalışmadığı için uygulama tek dilde (Python 3.12 + PySide6/Qt6) baştan yazıldı; sabitler, davranışlar ve araç kümesi Windows sürümüyle birebir korundu. Çekirdek (`paths`, `settings`, `profiles`, `providers`, `manage`, `inference`, `tools`, `chart`, `runner`), Qt6 arayüzü, taşınan Python işçileri, bash kurulum/yönetim/kaldırma/smoke betikleri, `.desktop` + simge, dokümanlar ve 78 test eklendi. Windows'a özgü parçalar Linux karşılıklarıyla değiştirildi: DPAPI → OS anahtar zinciri / `0600`; gömülü PowerShell 7 → sistem Python; WinForms → Qt6; `System.Drawing` → matplotlib; `%ProgramFiles%\7-Zip` → PATH'teki `7z`/`7za`; PDF yazı tipleri → DejaVu. | tümü |

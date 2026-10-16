@@ -10,6 +10,24 @@ Sürümün tek kaynağı `mamidlabs/__init__.py` içindeki `__version__` ve
 ## [1.0.0] — 2026-10-16
 
 ### Eklendi
+- **Kurulum sihirbazı (Qt6).** Uygulama menüsündeki “MamidLabs Kurulum” simgesi
+  (ya da `scripts/mamidlabs-setup.sh`) donanımı ölçüp uygun profili öneren bir
+  sihirbaz açar: dil (Türkçe/English) → karşılama → lisans → klasör → donanım
+  raporu → profil (LITE/PRO/indirme yok/kendi modelin–API) → (kendi modellerin) →
+  (API) → (bileşenler) → hazır → kurulum → özet → bitiş. 13 sayfa;
+  `mamidlabs/wizard/`. Sihirbaz `settings/api.json`'a dili ve seçimleri yazar,
+  kurulumu `install-mamidlabs.sh` üzerinden yürütür ve ilerlemeyi
+  `logs/kurulum-adim.txt`'ten okur.
+- **Donanım ölçümü** (`mamidlabs/core/hwinfo.py`): `nvidia-smi`, `/proc/meminfo`,
+  `/proc/cpuinfo`, `/etc/os-release` ve boş disk; VRAM ≥ 15000 MiB → PRO,
+  ≥ 7000 MiB → LITE, aksi ya da NVIDIA yok → API sağlayıcıları (Windows eşikleri).
+- **`.deb` paketi** (`packaging/linux/build-deb.sh`, `Architecture: all`):
+  uygulamayı **ve sihirbazı** kurar; `mamidlabs-setup` + `mamidlabs` başlatıcıları,
+  masaüstü girdileri ve simge.
+- `install-mamidlabs.sh --language tr|en` (ayar dosyasına yazar), sihirbaz için
+  ilerleme (`logs/kurulum-adim.txt`) ve özet (`logs/kurulum-ozeti.txt`) dosyaları.
+- Yeni testler: `test_hwinfo.py`, `test_wizard.py` (başsız Qt), `test_i18n.py`,
+  `test_packaging_contract.py` (toplam 152 test).
 - **MamidLabs Linux sürümü.** Windows sürümünün (`MamidLabsTR` / `MamidLabsENG`)
   tam Linux portu: WinForms/PowerShell yerine tek dilde **Python 3.12 + PySide6
   (Qt6)** masaüstü uygulaması.

@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=MamidLabs Kurulum
+Name[en]=MamidLabs Setup
+GenericName=Setup wizard
+GenericName[tr]=Kurulum sihirbazı
+Comment=MamidLabs kurulum sihirbazını başlatır
+Comment[en]=Start the MamidLabs setup wizard
+Exec=mamidlabs-setup
+TryExec=mamidlabs-setup
+Icon=mamidlabs
+Terminal=false
+Categories=Utility;Settings;
+Keywords=AI;LLM;setup;install;local;offline;
+StartupNotify=true
+StartupWMClass=MamidLabs
