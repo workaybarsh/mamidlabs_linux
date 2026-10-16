@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=MamidLabs
+GenericName=Local AI workspace
+Comment=Yerel, çok modlu yapay zekâ çalışma alanı
+Comment[en]=Fully local, multimodal AI workspace
+Exec=@ROOT@/mamidlabs-launch
+TryExec=@ROOT@/mamidlabs-launch
+Icon=mamidlabs
+Terminal=false
+Categories=Utility;Science;ArtificialIntelligence;
+Keywords=AI;LLM;chat;local;offline;ComfyUI;llama;
+StartupNotify=true
+StartupWMClass=MamidLabs

@@ -1,0 +1,15 @@
+# venv/imagegen: ComfyUI ve video kare araçları (PyAV).
+#
+# torch/torchvision/torchaudio bu dosyada YOK: CUDA tekerlekleri ayrı bir
+# index'ten gelir (Linux'ta cu130) ve CPU tekerlekleriyle karışmaması için
+# ayrı kurulur:
+#   venv/imagegen/bin/python -m pip install torch torchvision torchaudio \
+#     --index-url https://download.pytorch.org/whl/cu130
+#   venv/imagegen/bin/python -m pip install -r requirements/imagegen.txt
+#
+# ComfyUI'nin kendi requirements.txt'i ayrıca ComfyUI klasöründen kurulur.
+#
+# transformers: ComfyUI metin kodlayıcısı için gerekir; ComfyUI yalnızca
+# >=4.50.3 ister, burada sabitlenir (ComfyUI b0f4b7b ile doğrulanan: 5.17.0).
+transformers==5.17.0
+av==18.1.0

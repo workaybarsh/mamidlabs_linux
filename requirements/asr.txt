@@ -1,0 +1,21 @@
+# venv/asr: yerel konuşma + ses olayı döküm hattı.
+#   - faster-whisper: Whisper large-v3-tr (CTranslate2) konuşma dökümü + Silero VAD
+#   - transformers: AST (AudioSet) ses olayı etiketleme
+#   - pyannote.audio: konuşmacı ayrımı (opsiyonel; HF token ister)
+#   - av: 16 kHz mono WAV'a çevirme (ffmpeg gerekmez)
+#
+# torch/torchaudio bu dosyada YOK (bkz. imagegen.txt):
+#   venv/asr/bin/python -m pip install torch torchaudio \
+#     --index-url https://download.pytorch.org/whl/cu130
+#   venv/asr/bin/python -m pip install -r requirements/asr.txt
+#
+# nvidia-cublas-cu12 / nvidia-cudnn-cu12: CTranslate2 4.x cuBLAS/cuDNN arar.
+# Linux'ta bu paketler site-packages/nvidia/*/lib altına .so koyar;
+# transcriber/asr.py bu dizinleri yükleme yoluna ekler.
+faster-whisper==1.1.1
+transformers==5.17.0
+pyannote.audio==3.3.2
+av==18.1.0
+onnxruntime==1.20.1
+nvidia-cublas-cu12==12.9.0.13
+nvidia-cudnn-cu12==9.9.0.52
