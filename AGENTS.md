@@ -58,7 +58,7 @@ ve araç kümesi Windows sürümüyle birebir tutulur.
 | `packaging/linux/build-deb.sh` | `.deb` üretir (uygulama + sihirbaz); `packaging/linux/README.md` |
 | `packaging/mamidlabs.desktop`, `packaging/mamidlabs.svg` | Masaüstü başlatıcı ve simge |
 | `requirements/{app,imagegen,asr,ocr}.txt` | Python paketleri (sabit sürümler) |
-| `tests/` | pytest (152 test) |
+| `tests/` | pytest (201 test) |
 | `docs/` | `kurulum.md`, `teknik-notlar.md` |
 | `.github/workflows/tests.yml` | CI (ubuntu-latest, Python 3.12) |
 | `.github/workflows/kurulum-paketi.yml` | Yayın: `v*` etiketinde `.deb` derler, sabit adla (`mamidlabs.deb`) GitHub Release'e yükler |
@@ -75,10 +75,11 @@ Tek-atımlık JSON stdin/stdout sözleşmesi. Her işçi kendi sanal ortamında 
 | `ocr-tools.py` | ocr | PaddleOCR |
 | `media-tools.py` | imagegen | Video kare çıkarma (PyAV) |
 | `api-media.py` | app | API ile görsel/video üretimi |
-| `hf-hub.py` | app | Hugging Face indirme (boyut doğrulamalı) |
+| `hf-hub.py` | app | Hugging Face indirme (boyut + SHA256 doğrulamalı, kaldığı yerden sürer) |
 | `mtp_inject.py` | app | LITE GGUF'una MTP/nextn başlığı ekleme |
 | `whisper-tools.py` | asr | Ses dökümü (`transcriber/` paketini çağırır) |
 | `transcriber/` | asr | faster-whisper + AST + pyannote hattı |
+| `rag-tools.py` | app | Bağlı klasörde yerel (çevrimdışı) BM25 araması (`search_folder`) |
 | `_root.py` | — | İşçilerin kurulum kökünü okuması (`MAMIDLABS_ROOT` → XDG) |
 
 ## 3. Kurulum kökü düzeni
@@ -89,7 +90,7 @@ Tek-atımlık JSON stdin/stdout sözleşmesi. Her işçi kendi sanal ortamında 
   models/                           GGUF dil modelleri (+ mmproj)
   ComfyUI/                          sabit commit; custom_nodes: ComfyUI-GGUF, comfyui-krea2edit
   venv/{app,imagegen,asr,ocr}/      Python ortamları (bin/python)
-  tools/{hf-home,downloads,pip-cache,backup}/
+  tools/{hf-home,downloads,pip-cache,backup,rag}/
   settings/api.json                 tüm kullanıcı ayarları (gizli anahtarlar 0600)
   chats/  outputs/{images,videos,documents,charts,refs,thumbs,input}/
   logs/                             llama-server-*.std{out,err}.log, comfyui.*.log, audit.jsonl
@@ -133,6 +134,17 @@ taşıyorsa eklenir (`manage.gguf_has_mtp`); taşımayan modele verilirse llama.
 açılmaz. LITE'ın 9B GGUF'u başlığı dönüşümde kaybeder, indirmede `mtp_inject.py`
 ile geri eklenir. `settings.mtp=false` ile kapatılır.
 
+**Otomatik çaba (MAX/FLASH).** MAX ve FLASH aynı modeldir; tek fark sunucudaki
+`--reasoning-effort` değeridir. Profil değiştirmek modeli yeniden yüklediği
+(~15 sn) için varsayılan olarak (Profiller → **"Otomatik çaba (soruya göre)"**)
+çaba **istek başına** `chat_template_kwargs.reasoning_effort` ile verilir:
+kısa soru/selamlama → `low`, orta → `medium`, çok adımlı matematik/kod/analiz/
+karşılaştırma → `xhigh` (`inference.auto_reasoning_effort`). Seçim **tur başında
+bir kez** yapılır ve tur boyunca sabit kalır (sistem öneki değişmesin; KV
+önbelleği bozulmasın). Kapatılırsa sunucunun profil değeri kullanılır
+(`api.json → autoEffort=false`). LITE'ın şablonu bu anahtarı yok sayar; API
+sağlayıcılarına gönderilmez.
+
 **VRAM kapısı** (`manage.ModelManager`): gereken = model dosyası + pay. MAX/FLASH
 pay **750 MiB**, tolerans **0** (boş < gereken → hata). LITE pay **300 MiB**,
 tolerans **1024 MiB** (uyarı bandı `[gereken-1024, gereken)`). Görsel projektör üç
@@ -157,11 +169,18 @@ artık GPU işçileri (`Stop-OrphanWorkers`) kapatılır.
 4. **Araçlar** (`core/tools.py`): `search_web`, `fetch_page`, `read_document`,
    `read_images_ocr`, `create_document`, `generate_image`, `generate_video`,
    `generate_chart`, `find_reference_image`, `ask_model`, `list_bound_files`,
-   `read_bound_file`, `write_bound_file`, `run_command`. Araçlar niyete ve
-   çiplere göre sunulur; üretim araçları çağrı anında yeniden denetlenir.
+   `read_bound_file`, `search_folder`, `write_bound_file`, `run_command`. Araçlar
+   niyete ve çiplere göre sunulur; üretim araçları çağrı anında yeniden denetlenir.
 5. **Onay:** yazma/çalıştırma araçları `approve` geri çağrısıyla sorulur
    (`TurnWorker._approve` → `approval_needed` sinyali → `QMessageBox`). 10 dk
-   zaman aşımı → red. "Tam erişim" çipi açıksa sorulmaz.
+   zaman aşımı → red. "Tam erişim" çipi açıksa normalde sorulmaz; **ancak o turda
+   güvenilmeyen içerik** (`search_web`, `fetch_page`, `read_document`,
+   `read_images_ocr`, `read_bound_file`, `search_folder`) **okunduysa
+   `run_command` ve `write_bound_file` için yine sorulur** (`approval_required`);
+   onay penceresi nedeni de yazar (`chat.approval_untrusted`). Güvenilmeyen
+   içeriğin sonucu modele `chat.untrusted_prefix` etiketiyle verilir ve sistem
+   istemi (`prompt.untrusted`) bu içeriğin **talimat değil veri** olduğunu söyler
+   (istem enjeksiyonuna karşı).
 6. **`done` olayı** o turda eklenen `assistant.tool_calls` ve `tool` mesajlarını
    `data` alanında taşır; arayüz bunları kalıcı geçmişe ekler. Bu yapılmazsa
    sonraki turda istemci öneki sunucununkinden farklı olur ve bağlam baştan
@@ -208,9 +227,13 @@ modelin metni kullanılmaz, dürüst mesaj gösterilir; uydurma atıflar
 ## 9. Profiller, katalog ve indirme
 
 - `core/profiles.py`: her profil için dosya listesi (`target` köke göreli, `repo`,
-  `revision`, `filename`, `bytes`).
+  `revision`, `filename`, `bytes`, isteğe bağlı `sha256`).
 - İndirme boyutları: LITE ~36 GB, MAX/FLASH ~52 GB. `hf-hub.py` boyutu `bytes` ile
-  doğrular ve eksik dosyayı kaldığı yerden sürer. `HF_HOME` kökün altındadır.
+  doğrular, eksik dosyayı kaldığı yerden sürer (`hf_hub_download`) ve indirme
+  bitince **SHA256** doğrular: katalogda sabit `sha256` varsa onu, yoksa Hugging
+  Face LFS metadata'sındaki `lfs.sha256` özetini kullanır (repo/revision başına
+  önbelleklenir). Uyuşmazsa bozuk dosya **silinir** ve hata verilir. `HF_HOME`
+  kökün altındadır.
 - Profil durumu yalnızca dosyanın **varlığına** bakar, boyut karşılaştırmaz.
 - **Profil silme:** yalnızca o profile **özel** dosyalar silinir
   (`unique_targets`); paylaşılanlar korunur. MAX ve FLASH aynı küme olduğundan
@@ -252,7 +275,7 @@ modelin metni kullanılmaz, dürüst mesaj gösterilir; uydurma atıflar
 - LITE: `liteModel`, `liteContext`.
 - Medya: `comfyKeepAlive` (varsayılan `false`).
 - Ses: `audioEvents` (varsayılan `true`).
-- Diğer: `mtp` (varsayılan `true`), `boundFolder`.
+- Diğer: `mtp` (varsayılan `true`), `autoEffort` (varsayılan `true`), `boundFolder`.
 - Gizli anahtarlar: OS anahtar zinciri ya da bu dosyada (`0600`).
 
 Sohbetler `chats/` altında saklanır. `logs/audit.jsonl`: araç çağrıları kaydı
@@ -262,7 +285,7 @@ Sohbetler `chats/` altında saklanır. `logs/audit.jsonl`: araç çağrıları k
 
 ```bash
 python -m pip install pytest -r requirements/app.txt
-python -m pytest -q          # 152 test; PySide6 gerektirmez (Qt yalnızca sihirbaz testleri için)
+python -m pytest -q          # 201 test; PySide6 gerektirmez (Qt yalnızca sihirbaz testleri için)
 ./scripts/smoke-test.sh --profile flash
 ```
 
@@ -270,6 +293,12 @@ python -m pytest -q          # 152 test; PySide6 gerektirmez (Qt yalnızca sihir
   `__file__`'dan bağımsız çalışır.
 - Testler PySide6'yı **içe aktarmaz**; çekirdek mantık saf Python'dur. GUI
   yalnızca gerçek bir masaüstünde (smoke testinin arayüz adımlarında) çalışır.
+- Yeni davranış testleri: `test_model_download_integrity.py` (`sha256_file`,
+  `lookup_sha256`/`verify_sha256`, `incomplete_bytes`, `_mtp_config`, fetch
+  koruması), `test_auto_effort.py` (`auto_reasoning_effort` skoru + istek gövdesine
+  `chat_template_kwargs`), `test_prompt_injection.py` (güvenilmeyen içerik etiketi,
+  sistem istemi, tam erişimde bile onay), `test_rag_tools.py` (`rag-tools.py` BM25
+  + `search_folder` kapısı).
 - `manage.FileLock` Linux'ta `fcntl`, Windows'ta `msvcrt` kullanır (testler
   Windows'ta da içe aktarılabilir).
 - **Smoke testi adımları:** `doctor`, `sunucu_baslat`, `saglik`, `sohbet`,
@@ -340,6 +369,12 @@ bağlamı ~140 MiB ölçüldü; bu yüzden sıcak ses işçisi dil modeli geri y
     tembel içe aktarılır). Sihirbazın saf yardımcıları (`wizard/__init__.py`) Qt
     olmadan içe aktarılır ve test edilir. Dil süreç-global olduğundan testler
     `conftest.py`'deki autouse fikstürle Türkçe'ye sıfırlanır.
+14. **RAG indeksi güvenilmeyen içeriktir.** `search_folder` sonucu modele
+    `[GÜVENİLMEYEN İÇERİK…]` etiketiyle gider ve o turda yazma/çalıştırma onayı
+    tetikler. İndeks `tools/rag/bound-<hash>.json`'da tutulur; hash **gerçek yolun
+    aynısıyla** (küçük harfe çevrilmeden) alınır çünkü Linux yolları büyük/küçük
+    harfe duyarlıdır. `hf-hub.py` `HF_HOME`'u **import'tan önce** ayarlar; SHA256
+    uyuşmazsa indirilen dosya silinir (sessiz bozuk model bırakılmaz).
 
 ## 15. Değişiklik yaparken kontrol listesi
 
@@ -360,6 +395,10 @@ Her özellik/değişiklik için bir satır ekle (en yeni üstte).
 
 | Tarih | Değişiklik | Dosyalar |
 |---|---|---|
+| 2026-10-18 | **Bağlı klasörde yerel (çevrimdışı) RAG: `search_folder` aracı.** Yeni işçi `rag-tools.py` bağlı klasörü tarayıp BM25 (k1=1.2, b=0.75 + 1.6× tam-ifade bonusu) ile en ilgili metin parçalarını `[dosya:satır]` biçiminde döndürür; indeks `tools/rag/bound-<hash>.json`'da dosya imzasıyla (yol+mtime+boyut) önbelleklenir, bozulursa sessizce yeniden kurulur. `node_modules`/`.git`/`venv` gibi klasörler ve ikili/çok büyük dosyalar atlanır; kod çözme utf-8 → cp1254 → latin-1. Araç, bağlı-klasör dosya araçlarıyla aynı kapıdan geçer (ses turunda sunulmaz; `is_file_intent` ise sunulur) ve **güvenilmeyen** sayılır. | mamidlabs/workers/rag-tools.py, mamidlabs/core/tools.py, mamidlabs/core/paths.py, tests/test_rag_tools.py |
+| 2026-10-18 | **İstem enjeksiyonuna karşı sertleştirme.** `search_web`/`fetch_page`/`read_document`/`read_images_ocr`/`read_bound_file`/`search_folder` sonuçları modele `chat.untrusted_prefix` etiketiyle sunulur; sistem istemi (`prompt.untrusted`) bu içeriğin **talimat değil veri** olduğunu söyler. O turda güvenilmeyen içerik okunduysa `run_command`/`write_bound_file` "Tam erişim" çipi açıkken bile onay ister (`inference.approval_required`); onay penceresi nedeni yazar (`chat.approval_untrusted`). | mamidlabs/core/inference.py, mamidlabs/ui/main_window.py, mamidlabs/locales/*, tests/test_prompt_injection.py |
+| 2026-10-18 | **Otomatik çaba (MAX/FLASH için istek başına).** MAX ve FLASH aynı model olduğundan, `Profiller → "Otomatik çaba (soruya göre)"` açıkken (`api.json:autoEffort`, varsayılan `true`) `inference.auto_reasoning_effort` tur başına `low`/`medium`/`xhigh` seçer ve istek gövdesine `chat_template_kwargs.reasoning_effort` olarak konur (yalnızca yerel sağlayıcı; LITE şablonu yok sayar). Seçim tur boyunca sabit → model yeniden yüklenmez, KV öneki bozulmaz. | mamidlabs/core/inference.py, mamidlabs/core/settings.py, mamidlabs/ui/main_window.py, mamidlabs/locales/*, tests/test_auto_effort.py |
+| 2026-10-18 | **Model indirmede SHA256 doğrulama + kaldığı yerden sürme.** `hf-hub.py` eksik dosyayı `hf_hub_download` ile sürdürür, indirme bitince SHA256 doğrular (katalogdaki sabit `sha256` ya da Hugging Face LFS metadata özeti; repo/revision başına önbellek) ve uyuşmazsa bozuk dosyayı siler. `CatalogFile`'a isteğe bağlı `sha256`, kurulum payload'ına `sha256` + `mtp` sözlüğü eklendi (worker `mtpRepo` dizesini de kabul eder). | mamidlabs/workers/hf-hub.py, mamidlabs/core/profiles.py, scripts/install-mamidlabs.sh, tests/test_model_download_integrity.py |
 | 2026-10-16 | **Yayın iş akışı eklendi (`.deb`).** `v*` etiketi itilince `packaging/linux/build-deb.sh` ile `.deb` derlenir ve **sabit adla** (`mamidlabs.deb`) GitHub Release'e yüklenir; README'ye "Hazır paket (.deb)" bölümü ve `releases/latest/download/mamidlabs.deb` bağlantısı eklendi. Dal/PR koşuları yalnızca artifact üretir; etiket `__version__` ile eşleşmezse iş durur. | .github/workflows/kurulum-paketi.yml, README.md, CHANGELOG.md, AGENTS.md |
 | 2026-10-16 | **Kurulum sihirbazı + donanım ölçümü + `.deb` paketi eklendi.** Qt6 `QWizard` (13 sayfa: dil → karşılama → lisans → klasör → donanım raporu → profil → kendi modellerin → API → bileşenler → hazır → kurulum → özet → bitiş) kullanıcıya ilk adımda **Türkçe mi English mi** diye sorar; seçim canlı çevirir ve `settings/api.json:language`'a yazılır. `hwinfo` VRAM eşikleriyle (≥15000 MiB → PRO, ≥7000 MiB → LITE, NVIDIA yoksa → API) profil önerir. Sihirbaz `install-mamidlabs.sh`'i çalıştırır ve ilerlemeyi `logs/kurulum-adim.txt`'ten okur; betiğe `--language` ve ilerleme/özet yazımı eklendi. `packaging/linux/build-deb.sh` mimariden bağımsız `.deb` üretir (`mamidlabs-setup` + masaüstü girdileri). Sihirbaz saf yardımcılar (`wizard/__init__.py`) ile Qt penceresi (`wizard/setup.py`) olarak ayrıldı; `conftest.py` dil durumunu testler arasında sıfırlar. Testler: `test_hwinfo.py`, `test_wizard.py` (saf), `test_wizard_gui.py` (başsız Qt), `test_i18n.py`, `test_packaging_contract.py` (toplam 152). | `mamidlabs/core/hwinfo.py`, `mamidlabs/wizard/*`, `scripts/install-mamidlabs.sh`, `scripts/mamidlabs-setup.sh`, `packaging/linux/*`, `mamidlabs/locales/*`, `pyproject.toml`, `conftest.py`, `tests/*`, `README.md`, `CHANGELOG.md` |
 | 2026-10-16 | **Linux sürümü ilk kez yazıldı (1.0.0).** Windows sürümü (PowerShell + WinForms) Linux'ta çalışmadığı için uygulama tek dilde (Python 3.12 + PySide6/Qt6) baştan yazıldı; sabitler, davranışlar ve araç kümesi Windows sürümüyle birebir korundu. Çekirdek (`paths`, `settings`, `profiles`, `providers`, `manage`, `inference`, `tools`, `chart`, `runner`), Qt6 arayüzü, taşınan Python işçileri, bash kurulum/yönetim/kaldırma/smoke betikleri, `.desktop` + simge, dokümanlar ve 78 test eklendi. Windows'a özgü parçalar Linux karşılıklarıyla değiştirildi: DPAPI → OS anahtar zinciri / `0600`; gömülü PowerShell 7 → sistem Python; WinForms → Qt6; `System.Drawing` → matplotlib; `%ProgramFiles%\7-Zip` → PATH'teki `7z`/`7za`; PDF yazı tipleri → DejaVu. | tümü |
