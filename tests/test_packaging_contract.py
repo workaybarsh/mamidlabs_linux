@@ -95,3 +95,20 @@ def test_pinned_versions_are_present():
 def test_uninstaller_never_touches_outside_the_root(name):
     text = (SCRIPTS / name).read_text(encoding="utf-8")
     assert "MAMIDLABS_ROOT" in text
+
+
+def test_licence_matches_windows_parity_polyform_strict():
+    """Lisans Windows sürümüyle aynı olmalı: PolyForm Strict 1.0.0 (tir. ticari)."""
+    licence = (REPO / "LICENSE").read_bytes()
+    assert not licence.startswith(b"\xef\xbb\xbf"), "LICENSE BOM'suz (LF) olmalı"
+    assert licence.startswith(b"PolyForm Strict License 1.0.0"), \
+        "LICENSE resmî PolyForm Strict 1.0.0 başlığıyla başlamalı"
+    assert b"Noncommercial Purposes" in licence
+    assert b"distributing the software or making changes or new works" in licence
+
+
+def test_eula_ships_as_utf8_bom():
+    """EULA.txt Windows sürümüyle aynı olmalı: UTF-8 BOM'lu PolyForm bildirimi."""
+    eula = (REPO / "EULA.txt").read_bytes()
+    assert eula.startswith(b"\xef\xbb\xbf"), "EULA.txt UTF-8 BOM taşımalı"
+    assert "PolyForm Strict 1.0.0" in eula.decode("utf-8-sig")

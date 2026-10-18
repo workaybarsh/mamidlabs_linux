@@ -84,9 +84,10 @@ cp "$SCRIPT_DIR/mamidlabs.desktop" "$STAGE/usr/share/applications/"
 
 [[ -f "$REPO_DIR/README.md" ]] && cp "$REPO_DIR/README.md" "$STAGE/usr/share/doc/mamidlabs/README.md"
 cat > "$STAGE/usr/share/doc/mamidlabs/copyright" <<'EOF'
-MamidLabs — tüm hakları saklıdır.
-Telif: Aybars Haydar Altuntaş <workaybarsh@users.noreply.github.com>
-Lisans metni paket içindeki EULA.txt dosyasındadır.
+MamidLabs
+Copyright (c) 2026 Aybars Haydar Altuntaş.
+Bu yazılım PolyForm Strict License 1.0.0 ile lisanslanmıştır (kaynak-açık; yalnızca ticari olmayan kullanım).
+Resmî metin: https://polyformproject.org/licenses/strict/1.0.0
 EOF
 
 # --- DEBIAN/control ----------------------------------------------------------

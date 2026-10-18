@@ -94,6 +94,13 @@ Sürümün tek kaynağı `mamidlabs/__init__.py` içindeki `__version__` ve
   göre kısılır ve yalnızca gerçekten bir şey kısaldıysa "Bağlam sınırına yaklaşıldı" notu
   gösterilir (boşuna yanıltıcı not verilmez). Testler: `tests/test_inference.py`.
 
+### Değişti
+- **Lisans PolyForm Strict 1.0.0 oldu (kaynak-açık; yalnızca ticari olmayan kullanım).**
+  `LICENSE` ve `EULA.txt` resmî PolyForm Strict 1.0.0 metnini taşır: yazılımı dağıtma ve
+  değiştirme/türev eser üretme hakkı verilmez; ticari kullanım için önceden yazılı izin gerekir.
+  README lisans bölümü, `.deb` telif bildirimi (`copyright`) ve lisans testi buna göre
+  güncellendi. Sürüm numarası değişmedi (1.0.0).
+
 ### Değişti (Windows sürümüne göre)
 - Windows **DPAPI** yerine OS anahtar zinciri / `0600` dosya.
 - Windows **PowerShell 7 gömülü çalışma zamanı** yerine sistem Python'u
