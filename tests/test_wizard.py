@@ -61,7 +61,7 @@ def test_stage_names_track_the_installer_script():
     text = script.read_text(encoding="utf-8")
     stages = wizard.stage_names()
     for stage in stages:
-        assert f"stage_{stage}()" in text, f"{stage} aşaması betikte yok"
+        assert f"stage_{stage}()" in text, f"stage {stage} is not in the script"
     assert "for stage in " + " ".join(stages) in text
 
 
@@ -69,7 +69,7 @@ def test_step_label_translates_and_falls_back():
     i18n.set_language("tr")
     assert wizard.step_label("llama") == "llama.cpp"
     assert wizard.step_label("verify") == "Doğrulama"
-    assert wizard.step_label("bilinmeyen-adim") == "bilinmeyen-adim"
+    assert wizard.step_label("unknown-step") == "unknown-step"
 
 
 def test_find_install_script_honours_the_env_override(tmp_path, monkeypatch):
@@ -98,7 +98,7 @@ def test_every_wizard_key_used_in_code_is_in_the_catalogs():
         text = (package / name).read_text(encoding="utf-8")
         for key in literal.findall(text):
             for code, catalog in catalogs.items():
-                assert _known(key, catalog), f"{code}.json eksik: {key}"
+                assert _known(key, catalog), f"{code}.json is missing: {key}"
     # The dynamic families the window builds from lists.
     for code, catalog in catalogs.items():
         for stage in wizard.stage_names():

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mamidlabs"
 version = "1.0.0"
-description = "MamidLabs — tamamen yerel, çok modlu yapay zekâ çalışma alanı (Linux)"
+description = "MamidLabs — a fully local, multimodal AI workspace (Linux)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -20,8 +20,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-# Runtime bağımlılıkları. Kurulum betiği requirements/app.txt'i kurar; bu liste
-# `pip install -e .` ile elle kurulumda da doğru ortamı getirir.
+# Runtime dependencies. The installer installs requirements/app.txt; this list also
+# brings the right environment when installing manually with `pip install -e .`.
 dependencies = [
     "PySide6==6.8.1",
     "matplotlib==3.10.1",

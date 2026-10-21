@@ -44,12 +44,12 @@ def test_auth_headers():
 
 def test_to_text_only_flattens_images():
     messages = [{"role": "user", "content": [
-        {"type": "text", "text": "bak"},
+        {"type": "text", "text": "look"},
         {"type": "image_url", "image_url": {"url": "data:image/png;base64,AAAA"}}]}]
     out = providers.to_text_only(messages)
     assert isinstance(out[0]["content"], str)
-    assert "bak" in out[0]["content"]
-    assert "görsel" in out[0]["content"]
+    assert "look" in out[0]["content"]
+    assert "image" in out[0]["content"]
 
 
 def test_convert_request_openai(tmp_path):

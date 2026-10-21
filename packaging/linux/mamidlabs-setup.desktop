@@ -1,12 +1,14 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=MamidLabs Kurulum
+Name=MamidLabs Setup
 Name[en]=MamidLabs Setup
+Name[tr]=MamidLabs Kurulum
 GenericName=Setup wizard
 GenericName[tr]=Kurulum sihirbazı
-Comment=MamidLabs kurulum sihirbazını başlatır
+Comment=Start the MamidLabs setup wizard
 Comment[en]=Start the MamidLabs setup wizard
+Comment[tr]=MamidLabs kurulum sihirbazını başlatır
 Exec=mamidlabs-setup
 TryExec=mamidlabs-setup
 Icon=mamidlabs

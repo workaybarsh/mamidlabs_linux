@@ -8,8 +8,8 @@ JSON catalogs under ``mamidlabs/locales``:
 
 Rules that keep this honest:
 
-* Turkish is the source language. A missing key in ``en.json`` falls back to the
-  Turkish string, then to the key itself, so the UI can never render an empty
+* English is the source language. A missing key in another catalog falls back to
+  the English string, then to the key itself, so the UI can never render an empty
   label.
 * ``set_language`` is process-global (the app has a single UI language) and is
   what the installer/wizard writes into ``settings/api.json:language``.
@@ -25,11 +25,11 @@ import os
 import sys
 from pathlib import Path
 
-#: Languages the unified edition ships. ``tr`` is the default (source) language.
-SUPPORTED = ("tr", "en")
+#: Languages the unified edition ships. ``en`` is the default (source) language.
+SUPPORTED = ("en", "tr")
 
 #: Language used when nothing else is configured.
-DEFAULT_LANGUAGE = "tr"
+DEFAULT_LANGUAGE = "en"
 
 #: ``mamidlabs/locales`` sits next to the ``core`` package.
 LOCALES_DIR = Path(__file__).resolve().parent.parent / "locales"
@@ -107,7 +107,7 @@ def configure_console() -> None:
     On Linux the terminal is usually UTF-8, but as soon as the output is
     **redirected** (a pipe, a file, a systemd unit, the installer's log) Python
     falls back to the locale encoding (often ASCII under ``LANG=C``) and printing
-    a Turkish character raises :class:`UnicodeEncodeError`. Reconfiguring the
+    a non-ASCII character raises :class:`UnicodeEncodeError`. Reconfiguring the
     streams to UTF-8 (with ``replace`` as a last resort) keeps the CLI, ``doctor``
     and the installer logs readable instead of crashing.
     """
@@ -119,7 +119,7 @@ def configure_console() -> None:
 
 
 def t(key: str, **fmt: object) -> str:
-    """Translate ``key``; unknown keys fall back to Turkish, then to the key.
+    """Translate ``key``; unknown keys fall back to English, then to the key.
 
     ``fmt`` values are substituted with :meth:`str.format` so catalogs can use
     ``{name}`` placeholders.

@@ -73,4 +73,4 @@ def test_read_document_requires_documents(tmp_path):
 def test_unknown_tool_returns_error(tmp_path):
     reg = _registry(tmp_path)
     result = reg.call("nope", {})
-    assert "bilinmeyen araç" in result
+    assert "unknown tool" in result

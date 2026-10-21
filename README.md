@@ -1,164 +1,165 @@
 # MamidLabs — Linux
 
-Tamamen **yerel**, çok modlu bir yapay zekâ çalışma alanı. Tek bir Qt6 penceresinde
-sohbet, web araması, belge okuma/üretimi, OCR, görsel anlama, görsel üretimi,
-fotoğraf düzenleme, video üretimi, grafik çizimi ve ses dökümü sunar. Dil modeli
-**llama.cpp** (`llama-server`), görsel/video modelleri **ComfyUI** üzerinde,
-kullanıcının **NVIDIA** ekran kartında çalışır. OpenAI, Claude, Gemini, DeepSeek
-ve OpenAI uyumlu özel uçlar isteğe bağlı API sağlayıcılarıdır.
+A fully **local**, multimodal AI workspace. In a single Qt6 window it offers chat,
+web search, document reading/creation, OCR, image understanding, image generation,
+photo editing, video generation, chart drawing and audio transcription. The language
+model runs on **llama.cpp** (`llama-server`), the image/video models on **ComfyUI**,
+on the user's **NVIDIA** GPU. OpenAI, Claude, Gemini, DeepSeek and custom
+OpenAI-compatible endpoints are optional API providers.
 
-Bu depo, Windows sürümünün (`MamidLabsTR` / `MamidLabsENG`) **Linux portudur**.
-WinForms/PowerShell Linux'ta çalışmadığı için uygulama tek dilde
-(**Python 3.12 + PySide6/Qt6**) baştan yazılmış; aynı motorları (llama.cpp,
-ComfyUI) ve aynı Python araçlarını (web, belge, OCR, medya, döküm) kullanır.
+This repository is the **Linux port** of the Windows edition (`MamidLabsTR` /
+`MamidLabsENG`). Because WinForms/PowerShell do not run on Linux, the application was
+rewritten from scratch in a single language (**Python 3.12 + PySide6/Qt6**); it uses
+the same engines (llama.cpp, ComfyUI) and the same Python tools (web, document, OCR,
+media, transcription).
 
-Depo: `github.com/workaybarsh/mamidlabs_linux` · Varsayılan kurulum kökü:
-`~/.local/share/mamidlabs` (`MAMIDLABS_ROOT` ile değiştirilir).
+Repository: `github.com/workaybarsh/mamidlabs_linux` · Default install root:
+`~/.local/share/mamidlabs` (override with `MAMIDLABS_ROOT`).
 
 ---
 
-## Özellikler
+## Features
 
-| Yetenek | Nasıl çalışır |
+| Capability | How it works |
 |---|---|
-| Sohbet (akışlı) | Yerel `llama-server` (llama.cpp) ya da API sağlayıcısı; düşünme + yanıt ayrı gösterilir |
-| Web araması / sayfa okuma | `ddgs` + sayfa çıkarma; **başarısızsa uydurmaz**, dürüst bildirir |
-| Belge okuma / üretimi | PDF, Word, Excel, PowerPoint, ZIP, RAR okuma; PDF/DOCX/PPTX/XLSX üretimi |
-| OCR | PaddleOCR (GPU görsel, CPU PDF) — isteğe bağlı bileşen |
-| Görsel anlama | Modelin görsel projektörü (mmproj) ile görsel okuma |
-| Görsel üretimi / düzenleme | Yerel ComfyUI (Krea-2 Turbo; kimlik düzenleme MAX/FLASH) veya API |
-| Video üretimi | Yerel ComfyUI (Wan 2.2 TI2V 5B) veya API |
-| Grafik çizimi | matplotlib; bar/line/pie/scatter/function (güvenli ifade çözümleyici) |
-| Ses dökümü | faster-whisper `large-v3-tr` + AST ses olayları + opsiyonel konuşmacı ayrımı |
-| Araç çağırma | `search_web`, `fetch_page`, `read_document`, `create_document`, `generate_image`, `generate_video`, `generate_chart`, `ask_model`, bağlı klasör araçları, `run_command` |
-| Onay akışı | Yazma/çalıştırma araçları kullanıcı izni ister; "Tam erişim" çipi açıksa sorulmaz |
-| API sağlayıcıları | openai, claude, gemini, deepseek, custom (OpenAI uyumlu) |
+| Chat (streaming) | Local `llama-server` (llama.cpp) or an API provider; thinking + answer shown separately |
+| Web search / page reading | `ddgs` + page extraction; **does not fabricate when it fails**, reports honestly |
+| Document reading / creation | Reads PDF, Word, Excel, PowerPoint, ZIP, RAR; creates PDF/DOCX/PPTX/XLSX |
+| OCR | PaddleOCR (GPU for images, CPU for PDF) — optional component |
+| Image understanding | Reads images with the model's vision projector (mmproj) |
+| Image generation / editing | Local ComfyUI (Krea-2 Turbo; identity editing MAX/FLASH) or API |
+| Video generation | Local ComfyUI (Wan 2.2 TI2V 5B) or API |
+| Chart drawing | matplotlib; bar/line/pie/scatter/function (safe expression evaluator) |
+| Audio transcription | faster-whisper `large-v3-tr` + AST sound events + optional speaker diarization |
+| Tool calling | `search_web`, `fetch_page`, `read_document`, `create_document`, `generate_image`, `generate_video`, `generate_chart`, `ask_model`, bound-folder tools, `run_command` |
+| Approval flow | Write/execute tools ask for user permission; not asked when the "Full access" chip is on |
+| API providers | openai, claude, gemini, deepseek, custom (OpenAI-compatible) |
 
-**Güvenlik davranışları (Windows sürümüyle aynı):** İstenmeden belge/görsel/video/grafik
-üretilmez; web araması başarısızsa ya da İnternet kapalıyken güncel bilgi istenirse
-model **uydurmak yerine** bunu açıkça bildirir; `read_document` yalnızca belge
-bağlamı varken sunulur.
-
----
-
-## Gereksinimler
-
-- **Linux** (x86-64), Python **3.11–3.13** (3.12 önerilir), `git`, `curl`, `unzip`, `p7zip-full`
-- **NVIDIA** GPU + sürücü (görsel/video ve hızlı sohbet için). CPU-only modda çalışır ama çok yavaştır.
-- Disk: **LITE ~36 GB**, **MAX/FLASH ~52 GB** (modeller + ComfyUI + ortamlar)
-- RAM: 16 GB önerilir (LITE ~8 GB'ta da çalışır)
+**Safety behaviour (same as the Windows edition):** no document/image/video/chart is
+produced unless requested; if the web search fails or current information is requested
+while the internet is unavailable, the model **says so explicitly instead of making
+things up**; `read_document` is only offered while there is document context.
 
 ---
 
-## Kurulum
+## Requirements
 
-### Hazır paket (.deb)
+- **Linux** (x86-64), Python **3.11–3.13** (3.12 recommended), `git`, `curl`, `unzip`, `p7zip-full`
+- **NVIDIA** GPU + driver (for image/video and fast chat). Runs in CPU-only mode but is very slow.
+- Disk: **LITE ~36 GB**, **MAX/FLASH ~52 GB** (models + ComfyUI + environments)
+- RAM: 16 GB recommended (LITE also runs on ~8 GB)
 
-En son sürümün `.deb` paketini doğrudan indirin:
+---
 
-- **İndir:** [`mamidlabs.deb`](https://github.com/workaybarsh/mamidlabs_linux/releases/latest/download/mamidlabs.deb)
+## Installation
+
+### Prebuilt package (.deb)
+
+Download the latest version's `.deb` package directly:
+
+- **Download:** [`mamidlabs.deb`](https://github.com/workaybarsh/mamidlabs_linux/releases/latest/download/mamidlabs.deb)
 
 ```bash
 sudo apt install ./mamidlabs.deb
-mamidlabs-setup        # ya da uygulama menüsünden "MamidLabs Kurulum"
+mamidlabs-setup        # or "MamidLabs Setup" from the application menu
 ```
 
-### Kurulum sihirbazı (önerilen)
+### Setup wizard (recommended)
 
-Uygulama menüsündeki **MamidLabs Kurulum** simgesi (ya da `./scripts/mamidlabs-setup.sh`)
-donanımı ölçüp uygun profili öneren bir **Qt6 sihirbazı** açar:
+The **MamidLabs Setup** icon in the application menu (or
+`./scripts/mamidlabs-setup.sh`) opens a **Qt6 wizard** that measures the hardware and
+suggests a suitable profile:
 
-> dil (Türkçe / English) → karşılama → lisans → kurulum klasörü → donanım raporu →
-> profil (LITE / PRO / şimdi indirme / kendi modelin–API) → (kendi modellerin) →
-> (API) → (bileşenler) → hazır → kurulum → özet → bitiş
+> language (English / Türkçe) → welcome → licence → install folder → hardware report →
+> profile (LITE / PRO / download later / own model–API) → (own models) →
+> (API) → (components) → ready → install → summary → finish
 
-Sihirbaz dil seçimini `settings/api.json`'a yazar, kendi model yollarını ve
-bileşen seçimlerini kaydeder ve gerçek işi `scripts/install-mamidlabs.sh`'e
-bırakır; ilerlemeyi `logs/kurulum-adim.txt`'ten okur. Grafik masaüstü yoksa
-(`DISPLAY`/`WAYLAND_DISPLAY` yoksa) anlaşılır bir mesaj verip terminal betiğini
-önerir.
+The wizard writes the language choice into `settings/api.json`, saves its own model
+paths and component choices, and leaves the real work to
+`scripts/install-mamidlabs.sh`; it reads progress from `logs/kurulum-adim.txt`. When
+there is no graphical desktop (no `DISPLAY`/`WAYLAND_DISPLAY`) it prints a clear
+message and suggests the terminal script.
 
-`.deb` paketi de sihirbazı kurar:
+The `.deb` package installs the wizard too:
 
 ```bash
-packaging/linux/build-deb.sh                 # packaging/linux/Output/mamidlabs_<sürüm>_all.deb
+packaging/linux/build-deb.sh                 # packaging/linux/Output/mamidlabs_<version>_all.deb
 sudo apt install ./packaging/linux/Output/mamidlabs_*_all.deb
-mamidlabs-setup                              # ya da uygulama menüsünden "MamidLabs Kurulum"
+mamidlabs-setup                              # or "MamidLabs Setup" from the application menu
 ```
 
-Ayrıntı: [`packaging/linux/README.md`](packaging/linux/README.md).
+Details: [`packaging/linux/README.md`](packaging/linux/README.md).
 
-### Terminalden
+### From the terminal
 
 ```bash
 git clone https://github.com/workaybarsh/mamidlabs_linux.git
 cd mamidlabs_linux
-./scripts/install-mamidlabs.sh --profile flash --language tr
+./scripts/install-mamidlabs.sh --profile flash --language en
 ```
 
-Kurulum aşamaları: `preflight → layout → llama → python → comfyui → models → verify`.
-Ayrı ayrı çalıştırmak için `--stage` kullanın; örneğin yalnızca program dosyalarını
-güncellemek için:
+Installation stages: `preflight → layout → llama → python → comfyui → models → verify`.
+Use `--stage` to run them separately; for example, to only update the program files:
 
 ```bash
 ./scripts/install-mamidlabs.sh --stage layout
 ```
 
-Faydalı seçenekler:
+Useful options:
 
-| Seçenek | Etki |
+| Option | Effect |
 |---|---|
-| `--root <yol>` | Kurulum kökü (varsayılan `~/.local/share/mamidlabs`) |
-| `--profile max\|flash\|lite` | Model indirme profili (varsayılan: indirmez) |
-| `--language tr\|en` | Arayüz dili; `settings/api.json`'a yazılır |
-| `--skip-media` | ComfyUI ve görsel/video bileşenlerini atla |
-| `--skip-audio` | Ses dökümü ortamını (`venv/asr`) atla |
-| `--skip-ocr` | OCR ortamını (`venv/ocr`) atla |
-| `--skip-models` | Dil modeli indirmeyi atla |
-| `--no-desktop` | `.desktop` başlatıcısını kurma |
+| `--root <path>` | Install root (default `~/.local/share/mamidlabs`) |
+| `--profile max\|flash\|lite` | Model download profile (default: no download) |
+| `--language en\|tr` | Interface language (default `en`); written to `settings/api.json` |
+| `--skip-media` | Skip ComfyUI and the image/video components |
+| `--skip-audio` | Skip the audio transcription environment (`venv/asr`) |
+| `--skip-ocr` | Skip the OCR environment (`venv/ocr`) |
+| `--skip-models` | Skip the language-model download |
+| `--no-desktop` | Do not install the `.desktop` launcher |
 | `--no-cuda` | CPU-only torch |
-| `--force` | Var olanı yeniden kur |
+| `--force` | Reinstall what already exists |
 
-Kurulum kökü düzeni:
+Install root layout:
 
 ```
 ~/.local/share/mamidlabs/
-  llama.cpp/<build>/llama-server   sabitlenmiş llama.cpp yapısı
-  models/                          GGUF dil modelleri (+ mmproj)
-  ComfyUI/                         sabit commit ComfyUI + models/
-  venv/{app,imagegen,asr,ocr}/     Python ortamları (her biri kendi işi için)
+  llama.cpp/<build>/llama-server   pinned llama.cpp build
+  models/                          GGUF language models (+ mmproj)
+  ComfyUI/                         pinned-commit ComfyUI + models/
+  venv/{app,imagegen,asr,ocr}/     Python environments (each for its own job)
   tools/{hf-home,downloads,pip-cache}/
-  settings/api.json                tüm kullanıcı ayarları (gizli anahtarlar 0600)
-  chats/  outputs/  logs/          sohbetler, üretilen dosyalar, günlükler
-  mamidlabs-launch                başlatıcı (masaüstü kısayolunun hedefi)
+  settings/api.json                all user settings (secrets 0600)
+  chats/  outputs/  logs/          chats, generated files, logs
+  mamidlabs-launch                 launcher (target of the desktop shortcut)
 ```
 
 ---
 
-## Kullanım
+## Usage
 
-Uygulamayı başlat:
+Start the application:
 
 ```bash
 ~/.local/share/mamidlabs/mamidlabs-launch
 ```
 
-Ya da uygulama menüsünden **MamidLabs** (kurulum `.desktop` başlatıcısını
-`~/.local/share/applications` altına koyar).
+Or **MamidLabs** from the application menu (the installer places the `.desktop`
+launcher under `~/.local/share/applications`).
 
-Model yönetimi:
+Model management:
 
 ```bash
-./scripts/manage-mamidlabs.sh start flash    # yerel modeli başlat
-./scripts/manage-mamidlabs.sh stop           # durdur
-./scripts/manage-mamidlabs.sh status         # etkin profil
-./scripts/manage-mamidlabs.sh comfy          # ComfyUI başlat (medya için)
-./scripts/manage-mamidlabs.sh closecomfy     # boştaki ComfyUI'yi kapat
-./scripts/manage-mamidlabs.sh doctor         # kurulumu denetle
-./scripts/manage-mamidlabs.sh profiles       # profil durumu
+./scripts/manage-mamidlabs.sh start flash    # start the local model
+./scripts/manage-mamidlabs.sh stop           # stop
+./scripts/manage-mamidlabs.sh status         # active profile
+./scripts/manage-mamidlabs.sh comfy          # start ComfyUI (for media)
+./scripts/manage-mamidlabs.sh closecomfy     # close the idle ComfyUI
+./scripts/manage-mamidlabs.sh doctor         # inspect the installation
+./scripts/manage-mamidlabs.sh profiles       # profile status
 ```
 
-Komut satırı (GUI olmadan):
+Command line (without the GUI):
 
 ```bash
 python -m mamidlabs doctor
@@ -168,42 +169,42 @@ python -m mamidlabs manage start --profile lite
 
 ---
 
-## Kaldırma
+## Uninstallation
 
 ```bash
-./scripts/uninstall-mamidlabs.sh                  # tümü (sorar)
-./scripts/uninstall-mamidlabs.sh --keep-user-data # ayarlar/sohbetler/modeller kalır
-./scripts/uninstall-mamidlabs.sh --dry-run        # yalnızca göster
+./scripts/uninstall-mamidlabs.sh                  # everything (asks)
+./scripts/uninstall-mamidlabs.sh --keep-user-data # keeps settings/chats/models
+./scripts/uninstall-mamidlabs.sh --dry-run        # only show
 ```
 
-Kaldırıcı yalnızca kurulum köküne, `.desktop` başlatıcısına ve simgeye dokunur;
-kök dışındaki hiçbir dosyayı silmez.
+The uninstaller only touches the install root, the `.desktop` launcher and the icon;
+it deletes no file outside the root.
 
 ---
 
-## Donanım gerçekleri (ölçülmüş, Windows sürümünden)
+## Hardware facts (measured, from the Windows edition)
 
 | | 16 GB (RTX 5060 Ti) MAX/FLASH | 8 GB (RTX 4060 Laptop) LITE |
 |---|---|---|
-| Sohbet | ~42–58 tok/s (MTP açık) | ~97 tok/s (16 GB'ta MTP ile) |
-| Görsel (`yeni`), uçtan uca | 60–95 sn | 68–139 sn |
-| Fotoğraf düzenleme (`kimlik_duzenle`) | 74–160 sn | **desteklenmiyor** (8 GB'a sığmaz) |
+| Chat | ~42–58 tok/s (MTP on) | ~97 tok/s (with MTP on 16 GB) |
+| Image (`yeni` mode), end to end | 60–95 s | 68–139 s |
+| Photo editing (`kimlik_duzenle` mode) | 74–160 s | **not supported** (does not fit in 8 GB) |
 
-ComfyUI varsayılan olarak **yalnızca medya üretiminde** çalışır ve dil modeli
-yüklenmeden önce kapatılır (boşta ne VRAM ne RAM tutar).
+By default ComfyUI runs **only during media generation** and is closed before the
+language model loads (it holds neither VRAM nor RAM while idle).
 
 ---
 
-## Testler
+## Tests
 
 ```bash
 python -m pip install pytest -r requirements/app.txt
-python -m pytest -q          # 152 test; PySide6 gerektirmez (Qt yalnızca sihirbaz testlerinde lazım)
+python -m pytest -q          # 152 tests; does not require PySide6 (Qt is only needed for the wizard tests)
 ```
 
-PySide6 kuruluysa sihirbazın penceresi de başsız (`QT_QPA_PLATFORM=offscreen`)
-test edilir; kurulu değilse o testler atlanır. Uçtan uca doğrulama (kurulu kökte,
-gerçek modellerle):
+When PySide6 is installed, the wizard window is also tested headlessly
+(`QT_QPA_PLATFORM=offscreen`); when it is not installed those tests are skipped.
+End-to-end verification (on an installed root, with real models):
 
 ```bash
 ./scripts/smoke-test.sh --profile flash
@@ -211,21 +212,22 @@ gerçek modellerle):
 
 ---
 
-## Katkı ve geliştirme
+## Contributing and development
 
-Kod tabanının nasıl başlatıldığını, parçaların nasıl konuştuğunu ve bilinen
-tuzakları **[AGENTS.md](AGENTS.md)** anlatır. Yeni bir özellik eklediğinizde
-aynı commit'te `AGENTS.md` ve `CHANGELOG.md`'yi de güncelleyin.
+**[AGENTS.md](AGENTS.md)** explains how the codebase is started, how the pieces talk
+to each other and the known pitfalls. When you add a feature, update `AGENTS.md` and
+`CHANGELOG.md` in the same commit.
 
 ---
 
-## Lisans
+## Licence
 
-MamidLabs kaynak kodu **PolyForm Strict License 1.0.0** ile lisanslanmıştır (kaynak-açık;
-yalnızca **ticari olmayan** kullanım). Yazılımı dağıtamaz, değiştiremez veya üzerinde türev eser
-üretemezsiniz; ticari kullanım için Hak Sahibinden önceden yazılı izin gerekir. Telif hakkı
-Aybars Haydar Altuntaş'a aittir. Ayrıntılar için [LICENSE](LICENSE) dosyasına ve
-https://polyformproject.org/licenses/strict/1.0.0 adresine bakın.
-Kullanılan modeller (Qwen, Krea 2, Krea 2 Identity Edit LoRA, Wan 2.2 vb.) ve üçüncü taraf
-bileşenler (llama.cpp, ComfyUI, ComfyUI-GGUF, comfyui-krea2edit vb.) kendi lisanslarına tabidir; bu
-lisans onları kapsamaz.
+The MamidLabs source code is licensed under the **PolyForm Strict License 1.0.0**
+(source-available; **non-commercial** use only). You may not distribute, modify or
+create derivative works of the software; commercial use requires prior written
+permission from the rights holder. Copyright belongs to Aybars Haydar Altuntaş. For
+details see the [LICENSE](LICENSE) file and
+https://polyformproject.org/licenses/strict/1.0.0.
+The models used (Qwen, Krea 2, Krea 2 Identity Edit LoRA, Wan 2.2, etc.) and the
+third-party components (llama.cpp, ComfyUI, ComfyUI-GGUF, comfyui-krea2edit, etc.)
+are subject to their own licences; this licence does not cover them.

@@ -26,7 +26,7 @@ try:  # pragma: no cover - the guard is what matters
     from mamidlabs.wizard.setup import (ID_API, ID_COMPONENTS, ID_INSTALL, ID_LANG,
                                         ID_OWN, ID_PROFILE, ID_READY, SetupWizard)
 except ImportError as exc:  # pragma: no cover - missing system Qt libraries
-    pytest.skip(f"Qt yüklenemedi: {exc}", allow_module_level=True)
+    pytest.skip(f"Qt could not be loaded: {exc}", allow_module_level=True)
 
 
 @pytest.fixture(scope="module")

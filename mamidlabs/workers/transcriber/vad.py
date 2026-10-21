@@ -1,8 +1,8 @@
-"""Silero VAD: konusma araliklarini bulur (sessizlikte uydurma metni azaltir).
+"""Silero VAD: finds speech ranges (reduces invented text during silence).
 
-faster-whisper'in paketledigi silero VAD kullanilir (ayri model indirmek gerekmez).
-ASR tarafinda `vad_filter=True` zaten kullanilir; buradaki fonksiyon olay hattinin
-konusma disi pencereleri ayirmasi ve raporlama icindir.
+Uses the Silero VAD bundled with faster-whisper (no separate model download).
+The ASR side already uses `vad_filter=True`; the functions here let the event pipeline
+separate non-speech windows and report them.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ DEFAULT_MIN_SILENCE_MS = 500
 
 
 def speech_ranges(wav_path: str, min_silence_ms: int = DEFAULT_MIN_SILENCE_MS) -> list[tuple[float, float]]:
-    """(baslangic, bitis) saniye cinsinden konusma araliklari. Hata olursa bos liste."""
+    """Speech ranges as (start, end) seconds. Returns an empty list on error."""
     try:
         from faster_whisper.vad import VadOptions, get_speech_timestamps
     except Exception:
@@ -27,7 +27,7 @@ def speech_ranges(wav_path: str, min_silence_ms: int = DEFAULT_MIN_SILENCE_MS) -
 
 
 def is_speech(start: float, end: float, ranges: list[tuple[float, float]], min_overlap: float = 0.2) -> bool:
-    """Aralik, konusma araliklariyla en az `min_overlap` oraninda ortusuyor mu?"""
+    """Does the range overlap the speech ranges by at least the `min_overlap` ratio?"""
     span = max(end - start, 1e-6)
     for a, b in ranges:
         overlap = min(end, b) - max(start, a)

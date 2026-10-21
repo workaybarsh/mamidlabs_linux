@@ -130,7 +130,7 @@ def stage_names() -> tuple[str, ...]:
     return ("preflight", "layout", "llama", "python", "comfyui", "models", "verify")
 
 
-#: Matches ``logs\kurulum-adim.txt``-style writes: not used by the shell script,
+#: Matches ``logs/kurulum-adim.txt``-style writes: not used by the shell script,
 #: kept so a future ``--progress-file`` write can be validated in one place.
 _PROGRESS_RE = re.compile(r"^\s*(\d+)\s*/\s*(\d+)\s+(.*)$")
 

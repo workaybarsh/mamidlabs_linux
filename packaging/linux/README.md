@@ -1,68 +1,69 @@
-# MamidLabs Linux paketleme (.deb)
+# MamidLabs Linux packaging (.deb)
 
-Bu klasör, MamidLabs Linux sürümünün **`.deb` paketini** üretir. Paketin içinde
-uygulama kaynakları ve **kurulum sihirbazı** bulunur; paket kurulduktan sonra
-uygulama menüsündeki **“MamidLabs Kurulum”** simgesi sihirbazı açar.
+This folder builds the **`.deb` package** of the MamidLabs Linux edition. The package
+contains the application sources and the **setup wizard**; after installing the
+package, the **"MamidLabs Setup"** icon in the application menu opens the wizard.
 
-## Neden `.deb`
+## Why `.deb`
 
-Kurulum (llama.cpp, ComfyUI, ~36–52 GB model) kullanıcıya sorularak yapılmalıdır.
-Bu yüzden `.deb` *hazır bir kurulum* değil, **kurulum aracını** dağıtır:
+The installation (llama.cpp, ComfyUI, ~36–52 GB of models) has to be done by asking the
+user questions. The `.deb` therefore is not a *ready installation* but a distributor of
+the **installation tool**:
 
 1. `sudo apt install ./mamidlabs_1.0.0_all.deb`
-2. Uygulama menüsünden **MamidLabs Kurulum** → sihirbaz:
-   dil (TR/EN) → karşılama → lisans → klasör → donanım raporu → profil
-   (LITE/PRO/indirme yok/kendi modelin) → (kendi modellerin) → (API) →
-   (bileşenler) → hazır → kurulum → özet → bitiş.
+2. **MamidLabs Setup** from the application menu → wizard:
+   language (EN/TR) → welcome → licence → folder → hardware report → profile
+   (LITE/PRO/no download/own model) → (own models) → (API) →
+   (components) → ready → install → summary → finish.
 
-## Derleme
+## Building
 
 ```bash
 packaging/linux/build-deb.sh
-# çıktı: packaging/linux/Output/mamidlabs_1.0.0_all.deb
+# output: packaging/linux/Output/mamidlabs_1.0.0_all.deb
 ```
 
-Seçenekler: `--output <dizin>` (çıktı yeri), `--arch <all|amd64>` (varsayılan `all`).
+Options: `--output <dir>` (output location), `--arch <all|amd64>` (default `all`).
 
-Gereksinim: `dpkg-deb` (`apt install dpkg-dev`). Derleme makinesinde Python
-gerekmez; sürüm `mamidlabs/__init__.py` dosyasından okunur.
+Requirement: `dpkg-deb` (`apt install dpkg-dev`). Python is not needed on the build
+machine; the version is read from `mamidlabs/__init__.py`.
 
-## Paketin yerleştirdiği dosyalar
+## Files the package installs
 
-| Yol | İçerik |
+| Path | Contents |
 |---|---|
-| `/usr/lib/mamidlabs/mamidlabs` | Python paketi (uygulama + sihirbaz + dil katalogları) |
+| `/usr/lib/mamidlabs/mamidlabs` | Python package (application + wizard + locale catalogs) |
 | `/usr/lib/mamidlabs/scripts` | `install-mamidlabs.sh`, `manage-…`, `smoke-test.sh`, `mamidlabs-setup.sh` |
-| `/usr/bin/mamidlabs-setup` | Sihirbaz başlatıcı (`python3 -m mamidlabs.wizard`) |
-| `/usr/bin/mamidlabs` | Uygulama başlatıcı (`python3 -m mamidlabs`) |
-| `/usr/share/applications/mamidlabs-setup.desktop` | Kurulum sihirbazı simgesi |
-| `/usr/share/applications/mamidlabs.desktop` | Uygulama simgesi |
-| `/usr/share/icons/hicolor/scalable/apps/mamidlabs.svg` | Simge |
+| `/usr/bin/mamidlabs-setup` | Wizard launcher (`python3 -m mamidlabs.wizard`) |
+| `/usr/bin/mamidlabs` | Application launcher (`python3 -m mamidlabs`) |
+| `/usr/share/applications/mamidlabs-setup.desktop` | Setup wizard icon |
+| `/usr/share/applications/mamidlabs.desktop` | Application icon |
+| `/usr/share/icons/hicolor/scalable/apps/mamidlabs.svg` | Icon |
 
-Paket **mimariden bağımsızdır** (`Architecture: all`): içinde derlenmiş ikili yok,
-yalnızca Python var. Kurulum kökü varsayılan
-`~/.local/share/mamidlabs`'tır (`MAMIDLABS_ROOT` ile değişir).
+The package is **architecture-independent** (`Architecture: all`): it contains no
+compiled binaries, only Python. The default install root is
+`~/.local/share/mamidlabs` (change it with `MAMIDLABS_ROOT`).
 
-## Bağımlılıklar
+## Dependencies
 
 `Depends: python3 (>= 3.11), python3-venv, python3-pyside6.qtwidgets`
 
-`python3-pyside6.qtwidgets` paketi Debian trixie / Ubuntu 24.04 ve sonrasında
-vardır. Daha eski bir dağıtımda bu ad yoksa Qt'yi pip ile kurun:
+The `python3-pyside6.qtwidgets` package exists on Debian trixie / Ubuntu 24.04 and
+later. If an older distribution does not have this name, install Qt with pip:
 
 ```bash
 pip install --break-system-packages PySide6
 ```
 
-Qt yoksa sihirbaz `wizard.error.no_pyside` mesajını yazıp **2** koduyla çıkar;
-kurulum terminalden de yapılabilir:
+Without Qt the wizard prints the `wizard.error.no_pyside` message and exits with code
+**2**; the installation can also be done from the terminal:
 
 ```bash
-/usr/lib/mamidlabs/scripts/install-mamidlabs.sh --profile flash --language tr
+/usr/lib/mamidlabs/scripts/install-mamidlabs.sh --profile flash --language en
 ```
 
-## Masaüstü olmadan (sunucu/SSH)
+## Without a desktop (server/SSH)
 
-Sihirbaz grafik masaüstü ister (`DISPLAY`/`WAYLAND_DISPLAY`); yoksa
-`wizard.error.no_display` mesajıyla **1** koduyla çıkar ve terminal betiğini
-önnerir. Bu davranış `mamidlabs/wizard/__main__.py` içindedir.
+The wizard needs a graphical desktop (`DISPLAY`/`WAYLAND_DISPLAY`); without it, it
+exits with code **1** and the `wizard.error.no_display` message and suggests the
+terminal script. This behaviour lives in `mamidlabs/wizard/__main__.py`.

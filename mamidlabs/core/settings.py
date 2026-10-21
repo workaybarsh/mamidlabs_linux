@@ -52,10 +52,10 @@ DEFAULTS: dict[str, Any] = {
     "mtp": True,
     # MAX and FLASH are the same model; only the server's --reasoning-effort
     # differs. Picking the effort per request (from the question's difficulty)
-    # avoids reloading the model (~15 s). Toggle: menu -> "Otomatik çaba".
+    # avoids reloading the model (~15 s). Toggle: menu -> "Auto effort".
     "autoEffort": True,
     "theme": "system",
-    # Interface language chosen in the setup wizard (tr | en). The app reads it
+    # Interface language chosen in the setup wizard (en | tr). The app reads it
     # on start; changing it in the menu writes it back and retranslates live.
     "language": i18n.DEFAULT_LANGUAGE,
 }

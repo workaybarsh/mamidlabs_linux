@@ -1,10 +1,10 @@
-# venv/ocr: PaddleOCR (isteğe bağlı bileşen; kurulumda --skip-ocr ile atlanır).
+# venv/ocr: PaddleOCR (optional component; skipped during setup with --skip-ocr).
 #
-# PaddlePaddle'ın CUDA sürümü kurulu sürücüye/CUDA'ya göre değişir, bu yüzden
-# burada sabitlenmez. GPU için:
+# PaddlePaddle's CUDA build depends on the installed driver/CUDA, so it is not
+# pinned here. For GPU:
 #   venv/ocr/bin/python -m pip install paddlepaddle-gpu
-# CPU için:
+# For CPU:
 #   venv/ocr/bin/python -m pip install paddlepaddle
 #
-# Ardından: venv/ocr/bin/python -m pip install -r requirements/ocr.txt
+# Then: venv/ocr/bin/python -m pip install -r requirements/ocr.txt
 paddleocr>=3.0
